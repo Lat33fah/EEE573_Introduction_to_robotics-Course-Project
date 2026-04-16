@@ -47,35 +47,8 @@ PULSR Parallelogram Arm Robot.
    x_screen =  (e1 × cos(20°)) - (e2 × sin(20°))
    y_screen = -(e2 × cos(20°)) - (e1 × sin(20°))
    ```
-4. Scale by SCALER for screen display
-
-```
-void ForwardKinematics(double theta1, double theta2, double &x_screen, double &y_screen)
-{
-    // Converting all parameters to decimals and setting as constants because they don't chnage
-    const double L1 = 26.0;        
-    const double L2 = 52.0;        
-    const double SCALER = 25.0;
-    const double OFFSET_DEG = 20.0;
-
-    // --- Step 1: Convert degrees to radians ---
-    double t1 = theta1 * M_PI / 180.0;
-    double t2 = theta2 * M_PI / 180.0;
-    double offset = OFFSET_DEG * M_PI / 180.0;
-
-    // --- Step 2: Planar kinematics ---
-    double e1 = L1 * sin(t1) + L2 * sin(t2);
-    double e2 = L1 * cos(t1) + L2 * cos(t2);
-
-    // -
-    double x = (e1 * cos(offset)) - (e2 * sin(offset));
-    double y = -(e2 * cos(offset)) - (e1 * sin(offset));
-
-    // --- Step 4: Scale to screen ---
-    x_screen = x * SCALER;
-    y_screen = y * SCALER;
-}
-```
+4. Scale by SCALER for screen displa
+  
 
 ### Deliverable:
 Complete the `ForwardKinematics(double theta1, double theta2)` method.
