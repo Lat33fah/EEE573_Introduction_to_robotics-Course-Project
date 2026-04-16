@@ -46,22 +46,24 @@ namespace PULSR_3
         public int[] ForwardKinematics(double theta1, double theta2)
         {
             // TODO Step 1: Convert degrees to radians
-            // double t1_rad = ...
-            // double t2_rad = ...
+            double t1_rad = ToRadians(theta1)
+            double t2_rad = ToRadians(theta2)
 
             // TODO Step 2: Calculate link positions using trig
             // e2 = L1 * cos(t1) + L2 * cos(t2)
             // e1 = L1 * sin(t1) + L2 * sin(t2)
-            double e2 = 0; // REPLACE
-            double e1 = 0; // REPLACE
+            double e2 =  L1 * Math.Cos(t1_rad) + L2 * Math.Cos(t2_rad); 
+            double e1 = L1 * Math.Sin(t1_rad) + L2 * Math.Sin(t2_rad); 
 
             // TODO Step 3: Apply coordinate transformation (20 degree offset)
             // x_screen =   (e1 * cos(20)) - (e2 * sin(20))
             // y_screen =  -(e2 * cos(20)) - (e1 * sin(20))
-            double x_screen = 0; // REPLACE
-            double y_screen = 0; // REPLACE
+            double x_screen = (e1 * Math.Cos(offset)) - (e2 * Math.Sin(offset));
+            double y_screen = -(e2 * Math.Cos(offset)) - (e1 * Math.Sin(offset));
 
             // TODO Step 4: Apply scaler (multiply by SCALER)
+            x_screen *= SCALER;
+            y_screen *= SCALER;
 
             return new int[] { (int)x_screen, (int)y_screen };
         }
@@ -77,12 +79,31 @@ namespace PULSR_3
             // - Use File.ReadAllLines() to get all lines
             // - Parse each line as int using int.TryParse()
             // - Add to upperCommands list
-
+            string[] upperLines = File.ReadAllLines("Nupper_targets.txt");
+              foreach (string line in upperLines)
+                {
+                    if (int.TryParse(line, out int value))
+                    {
+                        upperCommands.Add(value);
+                    }
+                }
+            
             // TODO: Read "Nlower_targets.txt"
             // - Same process, add to lowerCommands list
+            string[] lowerLines = File.ReadAllLines("Nlower_targets.txt");
+
+            foreach (string line in lowerLines)
+                {
+                    if (int.TryParse(line, out int value))
+                    {
+                        lowerCommands.Add(value);
+                    }
+                }
 
             // TODO: Print how many commands were loaded (for debugging)
             // Console.WriteLine($"Loaded {upperCommands.Count} commands");
+            Console.WriteLine($"Loaded {upperCommands.Count} upper commands");
+            Console.WriteLine($"Loaded {lowerCommands.Count} lower commands");
         }
 
         /// <summary>
@@ -101,15 +122,17 @@ namespace PULSR_3
             // Step 1 = angle 269
             // Step 360 = angle -90
             // Formula: step = (int)(270 - orbitAngle)
-            int step = 0; // REPLACE
-
+            int step = (int)(270 - orbitAngle);
+            
             // TODO Step 2: Make sure step is in valid range
-            // if (step < 0) step = 0;
-            // if (step >= upperCommands.Count) step = upperCommands.Count - 1;
+             if (step < 0)
+                 step = 0;
+            /if (step >= upperCommands.Count) 
+                step = upperCommands.Count - 1;
 
             // TODO Step 3: Get the motor speeds from the loaded lists
-            int speedUpper = 0; // REPLACE with upperCommands[step]
-            int speedLower = 0; // REPLACE with lowerCommands[step]
+            int speedUpper = upperCommands[step]; 
+            int speedLower = lowerCommands[step]; 
 
             return new int[] { speedUpper, speedLower };
         }
