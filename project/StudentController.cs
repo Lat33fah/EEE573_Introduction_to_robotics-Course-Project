@@ -27,41 +27,35 @@ namespace PULSR_3
 
         public StudentController()
         {
-            // TODO: Initialize the command lists
+            // Initialize the command lists
             upperCommands = new List<int>();
             lowerCommands = new List<int>();
-            
-            // TODO: Call your file loading method here
-            // LoadTrajectoryFiles();
+
+            // Load trajectory files
+            LoadTrajectoryFiles();
         }
 
         /// <summary>
         /// TASK 1: Forward Kinematics
         /// Given the motor angles, calculate the end-effector screen position.
-        /// Use the PULSR Parallelogram Arm Robot configuration in README.md for reference.
         /// </summary>
-        /// <param name="theta1">Upper motor angle (degrees)</param>
-        /// <param name="theta2">Lower motor angle (degrees)</param>
-        /// <returns>Array {screenX, screenY}</returns>
         public int[] ForwardKinematics(double theta1, double theta2)
         {
-            // TODO Step 1: Convert degrees to radians
-            double t1_rad = ToRadians(theta1)
-            double t2_rad = ToRadians(theta2)
+            // Step 1: Convert degrees to radians
+            double t1_rad = ToRadians(theta1);
+            double t2_rad = ToRadians(theta2);
 
-            // TODO Step 2: Calculate link positions using trig
-            // e2 = L1 * cos(t1) + L2 * cos(t2)
-            // e1 = L1 * sin(t1) + L2 * sin(t2)
-            double e2 =  L1 * Math.Cos(t1_rad) + L2 * Math.Cos(t2_rad); 
-            double e1 = L1 * Math.Sin(t1_rad) + L2 * Math.Sin(t2_rad); 
+            // Step 2: Calculate link positions
+            double e2 = L1 * Math.Cos(t1_rad) + L2 * Math.Cos(t2_rad);
+            double e1 = L1 * Math.Sin(t1_rad) + L2 * Math.Sin(t2_rad);
 
-            // TODO Step 3: Apply coordinate transformation (20 degree offset)
-            // x_screen =   (e1 * cos(20)) - (e2 * sin(20))
-            // y_screen =  -(e2 * cos(20)) - (e1 * sin(20))
+            // Step 3: Apply coordinate transformation (20° offset)
+            double offset = ToRadians(OFFSET_ANGLE);
+
             double x_screen = (e1 * Math.Cos(offset)) - (e2 * Math.Sin(offset));
             double y_screen = -(e2 * Math.Cos(offset)) - (e1 * Math.Sin(offset));
 
-            // TODO Step 4: Apply scaler (multiply by SCALER)
+            // Step 4: Apply scaling
             x_screen *= SCALER;
             y_screen *= SCALER;
 
@@ -70,69 +64,73 @@ namespace PULSR_3
 
         /// <summary>
         /// TASK 2A: Load Trajectory Files
-        /// Read "Nupper_targets.txt" and "Nlower_targets.txt"
-        /// Parse each line as an integer and store in the lists.
         /// </summary>
         private void LoadTrajectoryFiles()
         {
-            // TODO: Read "Nupper_targets.txt" 
-            // - Use File.ReadAllLines() to get all lines
-            // - Parse each line as int using int.TryParse()
-            // - Add to upperCommands list
-            string[] upperLines = File.ReadAllLines("Nupper_targets.txt");
-              foreach (string line in upperLines)
+            try
+            {
+                // Load upper motor commands
+                if (File.Exists("Nupper_targets.txt"))
                 {
-                    if (int.TryParse(line, out int value))
-                    {
-                        upperCommands.Add(value);
-                    }
-                }
-            
-            // TODO: Read "Nlower_targets.txt"
-            // - Same process, add to lowerCommands list
-            string[] lowerLines = File.ReadAllLines("Nlower_targets.txt");
+                    string[] upperLines = File.ReadAllLines("Nupper_targets.txt");
 
-            foreach (string line in lowerLines)
-                {
-                    if (int.TryParse(line, out int value))
+                    foreach (string line in upperLines)
                     {
-                        lowerCommands.Add(value);
+                        if (int.TryParse(line, out int value))
+                        {
+                            upperCommands.Add(value);
+                        }
                     }
                 }
 
-            // TODO: Print how many commands were loaded (for debugging)
-            // Console.WriteLine($"Loaded {upperCommands.Count} commands");
-            Console.WriteLine($"Loaded {upperCommands.Count} upper commands");
-            Console.WriteLine($"Loaded {lowerCommands.Count} lower commands");
+                // Load lower motor commands
+                if (File.Exists("Nlower_targets.txt"))
+                {
+                    string[] lowerLines = File.ReadAllLines("Nlower_targets.txt");
+
+                    foreach (string line in lowerLines)
+                    {
+                        if (int.TryParse(line, out int value))
+                        {
+                            lowerCommands.Add(value);
+                        }
+                    }
+                }
+
+                // Debug output
+                Console.WriteLine($"Loaded {upperCommands.Count} upper commands");
+                Console.WriteLine($"Loaded {lowerCommands.Count} lower commands");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error loading trajectory files: " + ex.Message);
+            }
         }
 
         /// <summary>
         /// TASK 2B: Get Motor Commands  
-        /// Return the motor speeds for the current orbit position.
         /// </summary>
-        /// <param name="robotX">Current robot X position </param>
-        /// <param name="robotY">Current robot Y position </param>
-        /// <param name="orbitAngle">Current target angle on the orbit (270 to -90)</param>
-        /// <returns>Array {upperSpeed, lowerSpeed}</returns>
         public int[] CalculateControl(int robotX, int robotY, double orbitAngle)
         {
-            // TODO Step 1: Calculate which step we are on
-            // The orbit starts at 270 degrees and goes to -90 degrees
-            // Step 0 = angle 270
-            // Step 1 = angle 269
-            // Step 360 = angle -90
-            // Formula: step = (int)(270 - orbitAngle)
+            // Safety check
+            if (upperCommands.Count == 0 || lowerCommands.Count == 0)
+            {
+                return new int[] { 0, 0 };
+            }
+
+            // Step 1: Calculate step index
             int step = (int)(270 - orbitAngle);
-            
-            // TODO Step 2: Make sure step is in valid range
-             if (step < 0)
-                 step = 0;
-            /if (step >= upperCommands.Count) 
+
+            // Step 2: Clamp to valid range
+            if (step < 0)
+                step = 0;
+
+            if (step >= upperCommands.Count)
                 step = upperCommands.Count - 1;
 
-            // TODO Step 3: Get the motor speeds from the loaded lists
-            int speedUpper = upperCommands[step]; 
-            int speedLower = lowerCommands[step]; 
+            // Step 3: Get motor speeds
+            int speedUpper = upperCommands[step];
+            int speedLower = lowerCommands[step];
 
             return new int[] { speedUpper, speedLower };
         }
